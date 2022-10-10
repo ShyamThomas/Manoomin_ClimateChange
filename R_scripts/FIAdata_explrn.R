@@ -88,7 +88,7 @@ MN_tree_Yr2000
 MN_tree_Yr2000.red=MN_tree_Yr2000[,c(1:21)]
 MN_tree_Yr2000.red 
 
-### Join Conditiona data to Tree data
+### Join Condition data to Tree data
 MN_cond
 MN_cond.tree_join=left_join(MN_tree_Yr2000.red, MN_cond, by=c("PLT_CN", "CONDID", "PLOT"))
 MN_cond.tree_join

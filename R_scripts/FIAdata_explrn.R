@@ -90,36 +90,33 @@ MN_tree_Yr2000.red
 
 ### Join Condition data to Tree datafile
 MN_cond
-MN_cond.tree_join=left_join(MN_tree_Yr2000.red, MN_cond, by=c("PLT_CN", "CONDID", "PLOT"))
+MN_cond.tree_join=left_join(MN_tree_Yr2000.red, MN_cond, by=c("PLT_CN", "CONDID", "PLOT", "INVYR"))
 MN_cond.tree_join
 
-MN_cond.tree2plot.join=left_join(MN_cond.tree_join,Plots_OnlyIn_BigRiceWtrshd_2K.yr_data, by="PLOT")
-MN_cond.tree2plot.join
-MN_cond.tree2plot.join.noNA=MN_cond.tree2plot.join%>%filter(Lon != "NA")
-MN_cond.tree2plot.join.noNA
-MN_cond.tree2plot.join.noNA.sf=st_as_sf(MN_cond.tree2plot.join.noNA, coords = c("Lon", "Lat"), crs=4326)
-MN_cond.tree2plot.join.noNA.sf
+cond.tree_BigRiceplot.join=left_join(Plots_OnlyIn_BigRiceWtrshd_2K.yr_data,MN_cond.tree_join, by=c("PLOT", "INVYR"))
+cond.tree_BigRiceplot.join
 
+cond.tree_BigRiceplot.sf=st_as_sf(cond.tree_BigRiceplot.join, coords = c("Lon", "Lat"), crs=4326)
+cond.tree_BigRiceplot.sf
 ggplot(BigRice_Wtrshd)+geom_sf()+
-  geom_sf(data = MN_cond.tree2plot.join.noNA.sf, alpha=0.5)+facet_wrap(~INVYR)
+  geom_sf(data = cond.tree_BigRiceplot.sf, alpha=0.5)+facet_wrap(~INVYR)
 
 ### Find the 5 most common species based on plot-level occurrence
-CommonSp=MN_cond.tree2plot.join.noNA%>%group_by(SPCD)%>%tally(n_distinct(PLOT))%>%top_n(5, wt=n)%>%pull(SPCD)
+CommonSp=cond.tree_BigRiceplot.join%>%group_by(SPCD)%>%tally(n_distinct(PLOT))%>%top_n(5, wt=n)%>%pull(SPCD)
 CommonSp
 Cycle1=c(2000, 2005,2010, 2015)
 Cycle1
 ### Species composition plot level
-BigRice_wtrshd_plot.spcomp=MN_cond.tree2plot.join.noNA%>%group_by(PLOT, Lon, Lat, SPCD)%>%tally()
+BigRice_wtrshd_plot.spcomp=cond.tree_BigRiceplot.join%>%group_by(PLOT, Lon, Lat, INVYR, SPCD)%>%tally()
 BigRice_wtrshd_plot.spcomp
 
-Bear_wtrshd_plot.Comm.SpComp=Bear_wtrshd_plot.spcomp%>%filter(SPCD %in% CommonSp)
-Bear_wtrshd_plot.Comm.SpComp
-Bear_wtrshd_plot.Comm.SpComp_sf=st_as_sf(Bear_wtrshd_plot.Comm.SpComp, coords = c("Lon","Lat"))
-Bear_wtrshd_plot.Comm.SpComp_sf=st_set_crs(Bear_wtrshd_plot.Comm.SpComp_sf, 4326)
-Bear_wtrshd_plot.Comm.SpComp_sf
+BigRice_wtrshd_plot.Comm.SpComp=BigRice_wtrshd_plot.spcomp%>%filter(SPCD %in% CommonSp)
+BigRice_wtrshd_plot.Comm.SpComp
+BigRice_wtrshd_plot.Comm.SpComp_sf=st_as_sf(BigRice_wtrshd_plot.Comm.SpComp, coords = c("Lon","Lat"), crs=4326)
+BigRice_wtrshd_plot.Comm.SpComp_sf
 
 ggplot(BigRice_Wtrshd)+geom_sf()+
-geom_sf(data = Bear_wtrshd_plot.Comm.SpComp_sf, aes( col=n))+facet_wrap(~SPCD)+scale_colour_viridis_c()
+geom_sf(data = BigRice_wtrshd_plot.Comm.SpComp_sf, aes( col=n))+facet_wrap(~SPCD)+scale_colour_viridis_c()
 
 ### Species composition as basal area at plot level
 Bear_wtrshd_plot.sp.BA=MN_tree2plot.join.noNA%>%group_by(PLOT, Lon, Lat, SPCD)%>%summarise(totBasArea=sum(DIA, na.rm = TRUE))

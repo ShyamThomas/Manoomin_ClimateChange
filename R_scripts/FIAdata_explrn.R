@@ -95,7 +95,20 @@ MN_cond.tree_join
 
 cond.tree_BigRiceplot.join=left_join(Plots_OnlyIn_BigRiceWtrshd_2K.yr_data,MN_cond.tree_join, by=c("PLOT", "INVYR"))
 cond.tree_BigRiceplot.join
+length(unique(cond.tree_BigRiceplot.join$PLOT))
+length(unique(cond.tree_BigRiceplot.join$Lat)) ### there is a discrepency between plots and lat/lon
+### plots that have 2 lat lon attributed to them
+Plots_wMultiLatLon=cond.tree_BigRiceplot.join%>%group_by(PLOT)%>%tally(n_distinct(Lat))%>%filter(n==2)%>%pull(PLOT)
+### trying to visualize where these plots are
+Plots_wMultiLatLon.df=cond.tree_BigRiceplot.join%>%filter(PLOT %in% Plots_wMultiLatLon)
+Plots_wMultiLatLon.df
+Plots_wMultiLatLon.sf=st_as_sf(Plots_wMultiLatLon.df, coords = c("Lon", "Lat"), crs=4326)
 
+ggplot(BigRice_Wtrshd)+geom_sf()+
+geom_sf(data = Plots_wMultiLatLon.sf, alpha=0.5)+
+geom_label(data = Plots_wMultiLatLon.df, aes(Lon, Lat, label = PLOT), fontface = "bold", size=4)
+
+### the final distribution of plots in the wtrshd
 cond.tree_BigRiceplot.sf=st_as_sf(cond.tree_BigRiceplot.join, coords = c("Lon", "Lat"), crs=4326)
 cond.tree_BigRiceplot.sf
 ggplot(BigRice_Wtrshd)+geom_sf()+
@@ -104,8 +117,7 @@ ggplot(BigRice_Wtrshd)+geom_sf()+
 ### Find the 5 most common species based on plot-level occurrence
 CommonSp=cond.tree_BigRiceplot.join%>%group_by(SPCD)%>%tally(n_distinct(PLOT))%>%top_n(5, wt=n)%>%pull(SPCD)
 CommonSp
-Cycle1=c(2000, 2005,2010, 2015)
-Cycle1
+
 ### Species composition plot level
 BigRice_wtrshd_plot.spcomp=cond.tree_BigRiceplot.join%>%group_by(PLOT, Lon, Lat, INVYR, SPCD)%>%tally()
 BigRice_wtrshd_plot.spcomp
@@ -119,36 +131,34 @@ ggplot(BigRice_Wtrshd)+geom_sf()+
 geom_sf(data = BigRice_wtrshd_plot.Comm.SpComp_sf, aes( col=n))+facet_wrap(~SPCD)+scale_colour_viridis_c()
 
 ### Species composition as basal area at plot level
-Bear_wtrshd_plot.sp.BA=MN_tree2plot.join.noNA%>%group_by(PLOT, Lon, Lat, SPCD)%>%summarise(totBasArea=sum(DIA, na.rm = TRUE))
-Bear_wtrshd_plot.sp.BA
+BigRice_wtrshd_plot.sp.BA=cond.tree_BigRiceplot.join%>%group_by(PLOT, Lon, Lat, SPCD)%>%summarise(totBasArea=sum(DIA, na.rm = TRUE))
+BigRice_wtrshd_plot.sp.BA
 
-Bear_wtrshd_plot.Comm.SpBA=Bear_wtrshd_plot.sp.BA%>%filter(SPCD %in% CommonSp)
-Bear_wtrshd_plot.Comm.SpBA
-Bear_wtrshd_plot.Comm.SpBA_sf=st_as_sf(Bear_wtrshd_plot.Comm.SpBA, coords = c("Lon","Lat"))
-Bear_wtrshd_plot.Comm.SpBA_sf=st_set_crs(Bear_wtrshd_plot.Comm.SpBA_sf, 4326)
-Bear_wtrshd_plot.Comm.SpBA_sf
+BigRice_wtrshd_plot.Comm.SpBA=BigRice_wtrshd_plot.sp.BA%>%filter(SPCD %in% CommonSp)
+BigRice_wtrshd_plot.Comm.SpBA
+BigRice_wtrshd_plot.Comm.SpBA_sf=st_as_sf(BigRice_wtrshd_plot.Comm.SpBA, coords = c("Lon","Lat"), crs=4326)
+BigRice_wtrshd_plot.Comm.SpBA_sf
 
 ggplot(BigRice_Wtrshd)+geom_sf()+
-  geom_sf(data = Bear_wtrshd_plot.Comm.SpBA_sf, aes( col=totBasArea))+facet_wrap(~SPCD)+scale_colour_viridis_c()
+  geom_sf(data = BigRice_wtrshd_plot.Comm.SpBA_sf, aes( col=totBasArea))+facet_wrap(~SPCD)+scale_colour_viridis_c()
 
 ### Species composition plot and year level
-Bear_wtrshd_plot.year.spcomp=MN_tree2plot.join.noNA%>%group_by(INVYR.x, PLOT, Lon, Lat, SPCD)%>%tally()
-Bear_wtrshd_plot.year.spcomp
+Cycle1=c(2000, 2005,2010, 2015) ## selecting a repeat sampling cycle
+Cycle1
+
+BigRice_wtrshd_plot.year.spcomp=cond.tree_BigRiceplot.join%>%group_by(INVYR, PLOT, Lon, Lat, SPCD)%>%tally()
+BigRice_wtrshd_plot.year.spcomp
 
 
-Bear_wtrshd_plot.year.Comm.SpComp=Bear_wtrshd_plot.year.spcomp%>%filter(SPCD == 543 & INVYR.x %in% Years1)
-Bear_wtrshd_plot.year.Comm.SpComp
-Bear_wtrshd_plot.year.Comm.SpComp_sf=st_as_sf(Bear_wtrshd_plot.year.Comm.SpComp, coords = c("Lon","Lat"))
-Bear_wtrshd_plot.year.Comm.SpComp_sf=st_set_crs(Bear_wtrshd_plot.year.Comm.SpComp_sf, 4326)
-Bear_wtrshd_plot.year.Comm.SpComp_sf
-
+BigRice_wtrshd_plot.year.Comm.SpComp=BigRice_wtrshd_plot.year.spcomp%>%filter(SPCD == 12 & INVYR %in% Cycle1)
+BigRice_wtrshd_plot.year.Comm.SpComp
+BigRice_wtrshd_plot.year.Comm.SpComp_sf=st_as_sf(BigRice_wtrshd_plot.year.Comm.SpComp, coords = c("Lon","Lat"), crs=4326)
+BigRice_wtrshd_plot.year.Comm.SpComp_sf
 
 ggplot(BigRice_Wtrshd)+geom_sf()+
-  geom_sf(data = Bear_wtrshd_plot.year.Comm.SpComp_sf, aes( col=n))+facet_wrap(~SPCD+INVYR.x)+scale_colour_viridis_c()
+  geom_sf(data = BigRice_wtrshd_plot.year.Comm.SpComp_sf, aes( col=n))+facet_wrap(~SPCD+INVYR)+scale_colour_viridis_c()
 
-
-
-
+### A look art species richness
 MN_plots_sprich=MN_tree_Yr2000%>%group_by(INVYR)%>%summarise(
 SpRichness=n_distinct(SPCD),
 TotPlots=n_distinct(CN)
@@ -170,4 +180,30 @@ MN_sp.comp
 #plot(rice.sites_clip$geometry, add=TRUE, col="red", pch=16)
 
 ###Merge first MN_tree to MN_cond by PLT_CN
+
+##########################################################################################
+### Estimating change in softowod / hardwood cover and basal area across the watershed
+BigRice_plots.WoodType.BA=cond.tree_BigRiceplot.join%>%mutate(WoodType=case_when(SPGRPCD<25 ~ 'Softwood', SPGRPCD > 24 ~ 'Hardwood'))%>%
+group_by(INVYR, WoodType)%>%summarise(totBasArea=sum(DIA, na.rm = TRUE))%>%filter(!is.na(WoodType))
+BigRice_plots.WoodType.BA
+basal.area_ByWoodYear=ggplot(BigRice_plots.WoodType.BA, aes(INVYR,totBasArea, col=WoodType))+geom_point()+geom_line(lty=2)+
+  ylab("Total basal area")+xlab("")
+
+
+Prpn.HardSoft.Tree=cond.tree_BigRiceplot.join%>%filter(!is.na(SPCD))%>%group_by(INVYR)%>%summarise(
+    total=n(),
+    prpn.totalHard=sum(SPGRPCD>24 & SPGRPCD < 51)/total,
+    prpn.totalSoft=sum(SPGRPCD<25)/total,
+    prpn.totOther=sum(SPGRPCD > 50)/total)
+
+Prpn.HardSoft.Tree
+Prpn.HardSoft.Tree_lon =Prpn.HardSoft.Tree%>%pivot_longer(!c(INVYR,total,prpn.totOther),names_to = "WoodType", values_to = "n_prpn")
+Prpn.HardSoft.Tree_lon
+prpn_ByWoodYear=ggplot(Prpn.HardSoft.Tree_lon, aes(INVYR,n_prpn, col=WoodType))+geom_point()+geom_line(lty=2)+ylab("Proprtion")+xlab("")
+
+prpn_ByWoodYear+geom_smooth(method="glm")
+ggsave("FIA_BigRice_ChangeInMajorCover.png", path="Figures/", device="png",width = 9, height = 6)
+basal.area_ByWoodYear+geom_smooth(method="glm")
+ggsave("FIA_BigRice_ChangeInMajorCover_basalarea.png", path="Figures/", device="png",width = 9, height = 6)
+
 

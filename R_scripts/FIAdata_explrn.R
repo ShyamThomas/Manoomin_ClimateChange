@@ -36,7 +36,7 @@ MN_unq.plot_sf
 plot(MN_unq.plot_sf$geometry)
 
 ### The Rice sampling sites
-RiceFieldSites
+RiceFieldSites 
 RiceFieldSites_sf=st_as_sf(RiceFieldSites, coords = c("Lon","Lat"), crs=4326)
 RiceFieldSites_sf
 plot(RiceFieldSites_sf$geometry, col="red", axes=TRUE)
@@ -70,7 +70,7 @@ geom_sf(data = Plots_OnlyIn_BigRiceWtrshd, aes(col=as.factor(INVYR)))
 Plots_OnlyIn_BigRiceWtrshd_2K.yr=Plots_OnlyIn_BigRiceWtrshd%>%filter(INVYR>1999)
 Plots_OnlyIn_BigRiceWtrshd_2K.yr_coords <- Plots_OnlyIn_BigRiceWtrshd_2K.yr %>%
        mutate(Lon = unlist(map(Plots_OnlyIn_BigRiceWtrshd_2K.yr$geometry,1)),
-      Lat = unlist(map(Plots_OnlyIn_BigRiceWtrshd_2K.yr$geometry,2)))
+              Lat = unlist(map(Plots_OnlyIn_BigRiceWtrshd_2K.yr$geometry,2)))
 Plots_OnlyIn_BigRiceWtrshd_2K.yr_data=st_drop_geometry(Plots_OnlyIn_BigRiceWtrshd_2K.yr_coords)
 
 ### Maps of Big Rice wtrshd showing distrbution FIA plots
@@ -113,6 +113,9 @@ cond.tree_BigRiceplot.sf=st_as_sf(cond.tree_BigRiceplot.join, coords = c("Lon", 
 cond.tree_BigRiceplot.sf
 ggplot(BigRice_Wtrshd)+geom_sf()+
   geom_sf(data = cond.tree_BigRiceplot.sf, alpha=0.5)+facet_wrap(~INVYR)
+
+### Saving the merged data
+write_csv(cond.tree_BigRiceplot.join ,"ProcessedData/BigRice_TreeData.Join.csv")
 
 ### Find the 5 most common species based on plot-level occurrence
 CommonSp=cond.tree_BigRiceplot.join%>%group_by(SPCD)%>%tally(n_distinct(PLOT))%>%top_n(5, wt=n)%>%pull(SPCD)
@@ -182,7 +185,7 @@ MN_sp.comp
 ###Merge first MN_tree to MN_cond by PLT_CN
 
 ##########################################################################################
-### Estimating change in softowod / hardwood cover and basal area across the watershed
+### Estimating change in softwood / hardwood cover and basal area across the watershed
 BigRice_plots.WoodType.BA=cond.tree_BigRiceplot.join%>%mutate(WoodType=case_when(SPGRPCD<25 ~ 'Softwood', SPGRPCD > 24 ~ 'Hardwood'))%>%
 group_by(INVYR, WoodType)%>%summarise(totBasArea=sum(DIA, na.rm = TRUE))%>%filter(!is.na(WoodType))
 BigRice_plots.WoodType.BA
